@@ -1,0 +1,75 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "/home/danish/Desktop/DockerTestingCode/contracts/ConsumptionStorage.sol": {
+      "lastModificationDate": 1664149967832,
+      "contentHash": "c4dbecb3c15c3f5407670cda43d603f8",
+      "sourceName": "contracts/ConsumptionStorage.sol",
+      "solcConfig": {
+        "version": "0.8.11",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.9"
+      ],
+      "artifacts": [
+        "ConsumptionStorage"
+      ]
+    },
+    "/home/danish/Desktop/DockerTestingCode/contracts/FinancialCom.sol": {
+      "lastModificationDate": 1664150093027,
+      "contentHash": "e62486fbc63df163e99096b7ae4508ed",
+      "sourceName": "contracts/FinancialCom.sol",
+      "solcConfig": {
+        "version": "0.8.11",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.9"
+      ],
+      "artifacts": [
+        "FinancialCom"
+      ]
+    }
+  }
+}
