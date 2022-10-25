@@ -95,26 +95,45 @@
     </div>
     <header>
       <h1>⁂
-        <span>InfluxDB</span>
+        <span>Transfer data from influxDB to blockchain</span>
       </h1>
     </header>
-    <form method="POST" action="/uploadplan" enctype="multipart/form-data">
-      <label for="sector">Sector: </label>
+    <form method="POST" action="/uploadData" enctype="multipart/form-data">
+      <!--<label for="sector">Sector: </label>
       <input type="text" id="sector" name="sector" /><br>
       <label for="phase">Phase: </label>
       <input type="text" id="phase" name="phase" /><br>
       <label for="house">House: </label>
-      <input type="text" id="house" name="house" /><br>
-      <label for="house">Date: </label>
+      <input type="text" id="house" name="house" /><br> 
+      <label for="house">Date: </label>//-->
       <input type="date" id="d" name="datefolder" value="2018-12-10" />
       <input type="submit" />
     </form>
-    <h1>⁂
-      <span>Blockchain Address Generation</span>
-    </h1>
+    
+
+      <header>
+        <h1>⁂
+          <span>Perform Financial Calculations</span>
+        </h1>
+      </header>
+      <form method="POST" action="/financialcalculation" enctype="multipart/form-data">
+        <input type="date" id="d" name="datefolder" value="2018-12-10" />
+        <input type="submit" />
+      </form>
+      
+      
+      <h1>⁂
+        <span>Blockchain Address Generation</span>
+      </h1>
     <form method="POST" action="/generateaddresses" enctype="multipart/form-data">
-      <input type="text" id="n" name="name" />
       <input type="submit" value="Generate"/>
     </form>
+
+    <h1>⁂
+      <span>Update Blockchain Addresses</span>
+    </h1>
+  <form method="POST" action="/updateaddresses" enctype="multipart/form-data">
+    <input type="submit" value="Update"/>
+  </form>
   </body>
 </html>
