@@ -35,6 +35,18 @@ app.get("/index.html", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
+app.get("/fincom.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "fincom.html"));
+});
+
+app.get("/generateaddresses.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "generateaddresses.html"));
+});
+
+app.get("/updateaddresses.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "updateaddresses.html"));
+});
+
 app.post("/uploadData", async (req, res) => {
 var date = req.body.datefolder;
 console.log(date)
@@ -56,7 +68,7 @@ await clientMongo.connect();
 const db = clientMongo.db("simulator");
 async function getTopology () {
   return new Promise(function(resolve, reject) {
-     db.collection("addresses1").find({"_id": new ObjectID("63234545b21dc241195119e1")}).toArray( function(err, docs) {
+     db.collection("addresses").find({"_id": new ObjectID("63234545b21dc241195119e2")}).toArray( function(err, docs) {
       if (err) {
         // Reject the Promise with an error
         return reject(err)
@@ -141,6 +153,8 @@ const topologyResult = await getTopology()
 
 // Gets topology Info
 await getMongoData(topologyResult);
+
+res.send("Data uploaded to blockchain")
 
 //console.log(topologyResult)
 
@@ -296,7 +310,7 @@ app.post("/financialcalculation", async (req, res) => {
   const db = clientMongo.db("simulator");
   async function getTopology () {
     return new Promise(function(resolve, reject) {
-       db.collection("addresses").find({"_id": new ObjectID("63234545b21dc241195119e1")}).toArray( function(err, docs) {
+       db.collection("addresses").find({"_id": new ObjectID("63234545b21dc241195119e2")}).toArray( function(err, docs) {
         if (err) {
           // Reject the Promise with an error
           return reject(err)
@@ -351,15 +365,16 @@ app.post("/financialcalculation", async (req, res) => {
     for (var i=0; i < housesnew.length; i++) {
       const newMessage = await PlannedStorageContract.GetPlannedData(dateupload, housesnew[i]);
       if (newMessage != "") {
-        console.log("Retreiving the planned consumption data...");
+        console.log("Retreiving the planned consumption data for: ", housesnew[i]);
         var newMessage1 = newMessage;
+        console.log(newMessage)
       }
       else {
         console.log("Data is not available for this date or customer ID")
       }
       //console.log(newMessage1);
       //Fetching the data from decentralized storage using hash
-      let response1 = await fetch(`https://${newMessage1}.ipfs.dweb.link/data.json`)
+      let response1 = await fetch(`https://${newMessage1}.ipfs.w3s.link/data.json`)
       obj1 = await response1.json();
     
       //storing data in variables
@@ -371,9 +386,9 @@ app.post("/financialcalculation", async (req, res) => {
       
       //Converting data to integers
   
-      console.log(initial_consumption)
-      console.log(final_consumption)
-      console.log(real_consumption)
+      //console.log(initial_consumption)
+      //console.log(final_consumption)
+      //console.log(real_consumption)
     
       var initscfloat = initial_consumption.map(x => x * 100);
       var finalscfloat = final_consumption.map(x => x * 100);
@@ -391,9 +406,9 @@ app.post("/financialcalculation", async (req, res) => {
         return Number(each_element).toFixed(0);
       });
   
-      console.log(initsc)
-      console.log(finalsc)
-      console.log(realsc)
+      //console.log(initsc)
+      //console.log(finalsc)
+      //console.log(realsc)
       const contract2 = require("./artifacts/contracts/FinancialCom.sol/FinancialCom.json");
       const FinancialCom = new ethers.Contract(CONTRACT_ADDRESS_2, contract2.abi, signer);
       const newMessage3 = await FinancialCom.TotalPrice(dateupload, housesnew[i]);
@@ -417,6 +432,8 @@ app.post("/financialcalculation", async (req, res) => {
   const topologyResult = await getTopology()
   
   await financialCalculation(topologyResult, req.body.datefolder);
+
+  res.send("Financial Calculations Completed")
   
   //|> range(start: 2018-12-10T00:00:00Z, stop: 2018-12-10T23:59:59Z)\
   //Defining Query
@@ -449,12 +466,12 @@ async function run() {
     //console.log(collectionNames);
 
     // Get the collection (topology of simulation with object ID)
-    var cursor1 = db.collection("topology").find({"_id": new ObjectID("63234545b21dc241195119e1")});
+    var cursor1 = db.collection("topology1").find({"_id": new ObjectID("63234545b21dc241195119e1")});
     
     
     async function getTopology () {
       return new Promise(function(resolve, reject) {
-         db.collection("topology").find({"_id": new ObjectID("63234545b21dc241195119e1")}).toArray( function(err, docs) {
+         db.collection("topology1").find({"_id": new ObjectID("63234545b21dc241195119e2")}).toArray( function(err, docs) {
           if (err) {
             // Reject the Promise with an error
             return reject(err)
@@ -541,7 +558,7 @@ async function run() {
         console.log("Data Saved");
        });
   
-       res.send("All is well")
+       
       
     // Storing data in addresses collection
     
@@ -558,6 +575,9 @@ async function run() {
   }
 }
 run().catch(console.dir);
+
+
+res.send("Addresses generated")
 });
 
 
@@ -610,7 +630,9 @@ const collections = await db.listCollections().toArray()
   }
   
   async function updateAddresses(oldtopology, newtopology) {
-  
+    
+   
+
     //Get all keys (sector names e.g. N671) in an array
     var oldkeys = [];
     for (var k in oldtopology[0].IEEE13) oldkeys.push(k);
@@ -663,11 +685,20 @@ const collections = await db.listCollections().toArray()
     //await generateAddressessector(newtopology, oldtopology, sumWithInitial, unique)
     
 
+    
+    await generateAddresseshome(oldtopology, newtopology)
+
+    await new Promise(resolve => setTimeout(resolve, 3000));
+
     await generateAddressessectorandphase(newtopology, oldtopology)
+    
 
     res.send("Database Updated")
-
+    
+    
     async function generateAddressessectorandphase(newtopology, oldtopology) {
+
+      
 
       var oldkeys = [];
       for (var k in oldtopology[0].IEEE13) oldkeys.push(k);
@@ -724,6 +755,8 @@ const collections = await db.listCollections().toArray()
              
       }
     }
+
+    
     
     
     //console.log(util.inspect(newtopology, false, null, true /* enable colors */))
@@ -744,8 +777,57 @@ const collections = await db.listCollections().toArray()
     }; 
     
 
+
+
+
+    async function generateAddresseshome(oldtopology, newtopology) { 
+
+      //console.log(util.inspect(oldtopology, false, null, true /* enable colors */))
+
+      //console.log(util.inspect(newtopology, false, null, true /* enable colors */))
+
+      var oldkeys = [];
+      for (var k in oldtopology[0].IEEE13) oldkeys.push(k);
+      
+      var p = []
+      var phaseold = []
+      for (let i = 0; i < oldkeys.length; i++) {
+        for (let j = 0; j < oldtopology[0].IEEE13[oldkeys[i]].length; j++) {
+          p.push(Object.keys(oldtopology[0].IEEE13[oldkeys[i]][j]).toString())
+        }
+        phaseold.push(p);
+        p = []
+      }
+
+      var hsnew = 0
+      var hsold = 0
+      var hsoldarray = []
+      for (let i = 0; i < oldkeys.length; i++) {
+        for (let j = 0; j < phaseold[i].length; j++) {
+          hsnew = newtopology[0].IEEE13[oldkeys[i]][j][phaseold[i][j]]
+          hsold = oldtopology[0].IEEE13[oldkeys[i]][j][phaseold[i][j]].length
+          hsoldarray = oldtopology[0].IEEE13[oldkeys[i]][j][phaseold[i][j]]
+          if(hsnew != hsold){ 
+            var privatekeys = [];
+            console.log("i: ", i)
+            console.log("j: ", j)
+
+          for (let i = 0; i < (hsnew-hsold); i++) {
+            const wallet = ethers.Wallet.createRandom()
+            privatekeys.push(wallet.privateKey)
+            hsoldarray.push(wallet.address)
+          }
+          
+          }
+        }
+      }
+
+      console.log(util.inspect(oldtopology, false, null, true /* enable colors */))
+
+    }
+
     /*
-    async function generateAddressessector(newtopology, oldtopology, sumWithInitial, unique) {
+    async function generateAddresseshome(newtopology, oldtopology, sumWithInitial, unique) {
 
       var p = []
       var phase = []
