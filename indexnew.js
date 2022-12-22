@@ -14,8 +14,9 @@ app.use(
   })
 );
 app.use(express.json());
-const path = require("path");
 
+const path = require("path");
+app.use(express.static(__dirname + "/"));
 const st = 'T00:00:00Z';
 const et = 'T23:59:59Z';
 const org = 'Simulations'
@@ -45,6 +46,10 @@ app.get("/generateaddresses.html", (req, res) => {
 
 app.get("/updateaddresses.html", (req, res) => {
   res.sendFile(path.join(__dirname, "updateaddresses.html"));
+});
+
+app.get("/verification.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "verification.html"));
 });
 
 app.post("/uploadData", async (req, res) => {
@@ -170,7 +175,7 @@ async function queryExample(fluxQuery, address) {
     var Total_Consumption_Final = arrays[2].map(function(each_element){
       return Number(each_element).toFixed(3);
     })
-    ;
+    
     //console.log(Total_Consumption_Real)
     //console.log(Total_Consumption_Initial)
     //console.log(Total_Consumption_Final)
@@ -246,7 +251,25 @@ async function storeDataInBlockchain(date, hash) {
 
 
 app.post("/financialcalculation", async (req, res) => {
+
+  const influxToken = 'KrUZPCqJcuNmvbQtfL8TL_ZULcFT0mjGHOLQ4v1ZLNjXaKtq3Pgbke7wpUVjU-j_RnLtOLP_teU1NAG_OUTDnA=='
+  const client = new InfluxDB({url: "http://127.0.0.1:8086", token: influxToken})
+
+  const { ethers } = require("hardhat");
+  const API_URL = process.env.API_URL;
+  const PRIVATE_KEY = process.env.PRIVATE_KEY;
+  const CONTRACT_ADDRESS_1 = process.env.CONTRACT_ADDRESS_STO;
+  
+ //Fetching the data from blockchain using Storage Contract address and abi
+  const contract1 = require("./artifacts/contracts/ConsumptionStorage.sol/ConsumptionStorage.json");  
+  const provider = new ethers.providers.JsonRpcProvider(API_URL);
+  const signer = new ethers.Wallet(PRIVATE_KEY, provider);
+    
+  const PlannedStorageContract = new ethers.Contract(CONTRACT_ADDRESS_1, contract1.abi, signer);
+  const org = 'Simulations'
   var date = req.body.datefolder;
+  let starttime = date.concat(st);
+  let endtime = date.concat(et);
   const chain_id = 73799
   //Connect to Mongo Database
   var MongoClient = require('mongodb').MongoClient;
@@ -256,7 +279,7 @@ app.post("/financialcalculation", async (req, res) => {
   await clientMongo.connect();
       // Get the database
   const db = clientMongo.db("simulations");
-
+  
   
   async function getTopology () {
     return new Promise(function(resolve, reject) {
@@ -271,77 +294,154 @@ app.post("/financialcalculation", async (req, res) => {
       })
     })
   }
-  
+ 
   async function Calculation(topology, dateupload) {
+    
+    const queryApi = client.getQueryApi(org)
     var keys = [];
     for (var k in topology[0].IEEE13) keys.push(k);
-    let initialprice = 0
-    let finalprice = 0
-    var houses = []
-    console.log(keys.length)
+    let initialprice = 2
+    let finalprice = 3
+    let initial_consumption = []
+    let final_consumption = []
+    let real_consumption = []
+   
+    let sum = 0;
+    var houseAddresses = []
+    let balance = []
+    let singleHouse = []
+    //console.log(keys.length)
+    //for (let i = 0; i < keys.length; i++) {
+     // houses.push(topology[0].IEEE13[keys[i]]['users_in_the_node'])   
+    //}
+    //houses = houses.flat()
     for (let i = 0; i < keys.length; i++) {
-      houses.push(topology[0].IEEE13[keys[i]]['users_in_the_node'])   
+        for (let j = 0; j < topology[0].IEEE13[keys[i]]['users_in_the_node'].length; j++) {
+            singleHouse.push([topology[0].IEEE13[keys[i]]['node'], topology[0].IEEE13[keys[i]]['phase'], topology[0].IEEE13[keys[i]]['users_in_the_node'][j], j+2])
+        }
     }
-    houses = houses.flat()
     
-    const { ethers } = require("hardhat");
-    const API_URL = process.env.API_URL;
-    const PRIVATE_KEY = process.env.PRIVATE_KEY;
-    const CONTRACT_ADDRESS_1 = process.env.CONTRACT_ADDRESS_STO;
-    const CONTRACT_ADDRESS_2 = process.env.CONTRACT_ADDRESS_FIN;
-    let nonce = await provider.getTransactionCount(signer.address)
-    //Fetching the data from blockchain using Storage Contract address and abi
-    const contract1 = require("./artifacts/contracts/ConsumptionStorage.sol/ConsumptionStorage.json");  
-    const provider = new ethers.providers.JsonRpcProvider(API_URL);
-    const signer = new ethers.Wallet(PRIVATE_KEY, provider);
-    const PlannedStorageContract = new ethers.Contract(CONTRACT_ADDRESS_1, contract1.abi, signer);
+    console.log(singleHouse.length)
+    
     const newMessage = await PlannedStorageContract.GetPlannedData(dateupload);
+
     if (newMessage != "") {
       console.log("Retreiving the planned consumption data hash");
       var newMessage1 = newMessage;
       console.log(newMessage)
-
-      for (var i=0; i < houses.length; i++) {
-        let response1 = await fetch(`https://${newMessage1}.ipfs.w3s.link/filefolder/${houses[i]}.json`)
-        obj1 = await response1.json();
-        initial_consumption = obj1.initial
-        final_consumption = obj1.final;
-        real_consumption = obj1.real;
-        initialprice = obj1.initialprice;
-        finalprice = obj1.finalprice;
-      
     
-        var initscfloat = initial_consumption.map(x => x * 1000);
-        var finalscfloat = final_consumption.map(x => x * 1000);
-        var realscfloat = real_consumption.map(x => x * 1000);
+
+    let n = 50;
+   
+    let b = (Math.ceil(singleHouse.length / n))
+    for (let i = 0; i < b; i++) {
+        let newArray = []
+        if (singleHouse.length <= n) {
+          newArray = singleHouse.slice(0, singleHouse.length)
+          singleHouse.splice(0, singleHouse.length)
+          console.log(singleHouse.length)
+          console.log(newArray)
+          
+      }
+        if (singleHouse.length > n)
+        {
+            newArray = singleHouse.slice(0,n)
+            singleHouse.splice(0, n)
+            console.log(newArray)
+            console.log(singleHouse.length)
+            
+        }
+        
+        for (var k = 0; k < newArray.length; k++) {
+            
+            //console.log('Data is being retrieved for ', 'node: ', JSON.stringify(newArray[k][0]), 'phase: ', JSON.stringify(newArray[k][1]), 'address: ', newArray[k][2], 'house', newArray[k][3])
+            var fluxQuery = `\
+            from(bucket:"simulation_ieee_13")\
+            |> range(start: ${starttime}, stop: ${endtime})\
+            |> filter(fn: (r) => r["_measurement"] == "Total_Consumption_Real" or r["_measurement"] == "Total_Consumption_Initial" or r["_measurement"] == "Total_Consumption_Iterations0")\
+            |> filter(fn: (r) => r["_field"] == "total_consumption")\
+            |> filter(fn: (r) => r["node"] == ${JSON.stringify(newArray[k][0])})\
+            |> filter(fn: (r) => r["phase"] == ${JSON.stringify(newArray[k][1])})\
+            |> filter(fn: (r) => r["user"] == ${JSON.stringify((newArray[k][3]).toString())})\
+            `
+            
+        const data = await queryApi.collectRows(
+            fluxQuery 
+           )
+           //console.log(data)
+           var arr = [];
+           data.forEach((i) => arr.push(JSON.stringify(i._value)))
       
-        var initsc = initscfloat.map(function(each_element){
+           var arrays = [], size = 144;
+          
+          for (let i = 0; i < arr.length; i += size) {
+            arrays.push(arr.slice(i, i + size));
+          }
+          //Putting data in respective variables
+          var Total_Consumption_Real = arrays[0].map(function(each_element){
+            return Number(each_element);
+          });
+        
+          var Total_Consumption_Initial = arrays[1].map(function(each_element){
+            return Number(each_element);
+          });
+      
+          var Total_Consumption_Final = arrays[2].map(function(each_element){
+            return Number(each_element);
+          })
+
+        initial_consumption = Total_Consumption_Initial.map(function(each_element){
             return Number(each_element).toFixed(0);
         });
   
-        var finalsc = finalscfloat.map(function(each_element){
+        final_consumption = Total_Consumption_Final.map(function(each_element){
             return Number(each_element).toFixed(0);
         });
   
-        var realsc = realscfloat.map(function(each_element){
+        real_consumption = Total_Consumption_Real.map(function(each_element){
            return Number(each_element).toFixed(0);
         });
+
+        
+
+        
+        for(let i = 0; i < 144; i++){
+            if (real_consumption[i] >= initial_consumption[i]) {
+            sum += initialprice*final_consumption[i];
+            }
+        else if (real_consumption[i] <= final_consumption[i]) {
+            sum += finalprice*final_consumption[i];
+        }
+        else {
+            sum += ((((initialprice - finalprice)*1000)/(initial_consumption[i]-final_consumption[i])) * (real_consumption[i]-final_consumption[i])) + (finalprice*1000);
+        }
         }
 
-        tx(initsc, finalsc, realsc, initialprice, finalprice, nonce, houses[i])
-      }
-
-
-      else {
-        console.log("Data is not available for this date")
-        newMessage1 = '';
+        houseAddresses.push(newArray[k][2])
+        balance.push(sum)
+        sum = 0;
+        }
+        let nonce = await provider.getTransactionCount(signer.address)
+        let feeData = await provider.getFeeData();
+        await tx(balance, houseAddresses, date, nonce, feeData)
+        //console.log(houseAddresses)
+        //console.log(balance)
+        houseAddresses = []
+        balance = []
     }
 
+  }
+  else {
+    console.log("Data is not available for this date")
+    newMessage1 = '';
+}
+    
     
 
   }
 
-  async function tx(initsc, finalsc, realsc, initialprice, finalprice, nonce, house) {
+  async function tx(balance, houseAddresses, date, nonce, feeData) {
+    
     const { ethers } = require("hardhat");
     const API_URL = process.env.API_URL;
     const PRIVATE_KEY = process.env.PRIVATE_KEY;
@@ -350,14 +450,17 @@ app.post("/financialcalculation", async (req, res) => {
     const signer = new ethers.Wallet(PRIVATE_KEY, provider);
     const contract2 = require("./artifacts/contracts/FinancialCom.sol/FinancialCom.json");
     const FinancialCom = new ethers.Contract(CONTRACT_ADDRESS_2, contract2.abi, signer);
-    const newMessage3 = await FinancialCom.TotalPrice(date, house);
+    const newMessage3 = await FinancialCom.TotalPrice(date, houseAddresses[0]);
     if (newMessage3 == 0) {
       console.log("Calculating the financial compensation");
-      const estimatedGasLimit1 = await FinancialCom.estimateGas.FinancialCalculation(initsc, finalsc, realsc, initialprice, finalprice, date, house); // approves 1 USDT
-      const approveTxUnsigned1 = await FinancialCom.populateTransaction.FinancialCalculation(initsc, finalsc, realsc, initialprice, finalprice, date, house);
+      const estimatedGasLimit1 = await FinancialCom.estimateGas.storeBill(balance, houseAddresses, date); // approves 1 USDT
+      const approveTxUnsigned1 = await FinancialCom.populateTransaction.storeBill(balance, houseAddresses, date);
+      approveTxUnsigned1.type = 2,
       approveTxUnsigned1.chainId = chain_id; // chainId 1 for Ethereum mainnet
+      approveTxUnsigned1.maxPriorityFeePerGas= feeData["maxPriorityFeePerGas"]; // Recommended maxPriorityFeePerGas
+      approveTxUnsigned1.maxFeePerGas =feeData["maxFeePerGas"]
       approveTxUnsigned1.gasLimit = estimatedGasLimit1;
-      approveTxUnsigned1.gasPrice = await provider.getGasPrice();
+      //approveTxUnsigned1.gasPrice = await provider.getGasPrice();
       approveTxUnsigned1.nonce = nonce;
     
       const approveTxSigned1 = await signer.signTransaction(approveTxUnsigned1);
@@ -373,123 +476,6 @@ app.post("/financialcalculation", async (req, res) => {
       console.log("The financial compensation is already calculated for this date and user");
     }
   }
- 
-  async function financialCalculation(result, dateupload) {
-    //customerDID = '0x9e823dDAd833195d30944eDA6CE14F41396cae48'
-    //console.log(result)
-    //Get all keys (sector names e.g. N671) in an array
-    var keys = [];
-    for (var k in result[0].IEEE13) keys.push(k);
-    // Phase array, get the phases for each sector (N671)
-    var p = []
-    var phase = []
-    for (let i = 0; i < keys.length; i++) {
-      for (let j = 0; j < result[0].IEEE13[keys[i]].length; j++) {
-        p.push(Object.keys(result[0].IEEE13[keys[i]][j]).toString())
-      }
-      phase.push(p);
-      p = []
-    }
-    // Get houses in each phase
-    var houses = []
-    for (let i = 0; i < keys.length; i++) {
-      for (let j = 0; j < phase[i].length; j++) {
-        //console.log(result[0].IEEE13[keys[i]][j][phase[i][j]][0])
-        houses.push(result[0].IEEE13[keys[i]][j][phase[i][j]]);
-      }
-    }
-    var housesnew = [].concat.apply([], houses);
-
-    //console.log(housesnew)
-    const { ethers } = require("hardhat");
-    const API_URL = process.env.API_URL;
-    const PRIVATE_KEY = process.env.PRIVATE_KEY;
-    const CONTRACT_ADDRESS_1 = process.env.CONTRACT_ADDRESS_STO;
-    const CONTRACT_ADDRESS_2 = process.env.CONTRACT_ADDRESS_FIN;
-    
-    //Fetching the data from blockchain using Storage Contract address and abi
-    const contract1 = require("./artifacts/contracts/ConsumptionStorage.sol/ConsumptionStorage.json");  
-    const provider = new ethers.providers.JsonRpcProvider(API_URL);
-    const signer = new ethers.Wallet(PRIVATE_KEY, provider);
-    const PlannedStorageContract = new ethers.Contract(CONTRACT_ADDRESS_1, contract1.abi, signer);
-    var fintime = []
-
-
-    for (var i=0; i < housesnew.length; i++) {
-      var startTime = new Date();
-      const newMessage = await PlannedStorageContract.GetPlannedData(dateupload, housesnew[i]);
-      if (newMessage != "") {
-        console.log("Retreiving the planned consumption data for: ", housesnew[i]);
-        var newMessage1 = newMessage;
-        console.log(newMessage)
-      }
-      else {
-        console.log("Data is not available for this date or customer ID")
-        newMessage1 = '';
-      }
-      //console.log(newMessage1);
-      //Fetching the data from decentralized storage using hash
-      let response1 = await fetch(`https://${newMessage1}.ipfs.w3s.link/data.json`)
-      obj1 = await response1.json();
-    
-      //storing data in variables
-      initial_consumption = obj1.initial
-      final_consumption = obj1.final;
-      real_consumption = obj1.real;
-      let initialprice = obj1.initialprice;
-      let finalprice = obj1.finalprice;
-      
-      //Converting data to integers
-  
-      //console.log(initial_consumption)
-      //console.log(final_consumption)
-      //console.log(real_consumption)
-    
-      var initscfloat = initial_consumption.map(x => x * 100);
-      var finalscfloat = final_consumption.map(x => x * 100);
-      var realscfloat = real_consumption.map(x => x * 100);
-      
-      var initsc = initscfloat.map(function(each_element){
-        return Number(each_element).toFixed(0);
-      });
-  
-      var finalsc = finalscfloat.map(function(each_element){
-        return Number(each_element).toFixed(0);
-      });
-  
-      var realsc = realscfloat.map(function(each_element){
-        return Number(each_element).toFixed(0);
-      });
-  
-      console.log("Initial Consumption: ", initsc)
-      console.log("Initial Consumption: ", finalsc)
-      //console.log(realsc)
-      const contract2 = require("./artifacts/contracts/FinancialCom.sol/FinancialCom.json");
-      const FinancialCom = new ethers.Contract(CONTRACT_ADDRESS_2, contract2.abi, signer);
-      const newMessage3 = await FinancialCom.TotalPrice(dateupload, housesnew[i]);
-      if (newMessage3 == 0) {
-        console.log("Calculating the financial compensation");
-        const tx = await FinancialCom.FinancialCalculation(initsc, finalsc, realsc, initialprice, finalprice, dateupload, housesnew[i]);
-        await tx.wait();
-      }
-      else {
-        console.log("The financial compensation is already calculated for this date and user");
-      }
-    
-      const newMessage4 = await FinancialCom.TotalPrice(dateupload, housesnew[i]);
-      console.log("The calculated financial compensation is: " + (newMessage4/100000));
-
-      var endTime = new Date() - startTime;
-      fintime.push(endTime)
-      console.log(fintime)
-    }
-    
-    return(fintime)
-  
-  }
- 
-  
-  
  
 
   const topologyResult = await getTopology()
