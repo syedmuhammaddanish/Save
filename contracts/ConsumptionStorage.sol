@@ -9,22 +9,22 @@ contract ConsumptionStorage{
     }
 
     //Maps date and customer information to the related energy consumption values
-    mapping(string => mapping (address => string)) hash;
+    mapping(string => string) hash;
     
-    function SetPlannedData (string memory _hash, address _customer, string memory _date) public {
+    function SetPlannedData (string memory _hash, string memory _date) public {
         //require(msg.sender == owner);
         //if(hash[_date][_customer] != ""){
         //    revert("The data is already stored for this date");
        // }
-        bytes memory temp = bytes(hash[_date][_customer]);
+        bytes memory temp = bytes(hash[_date]);
         if(temp.length != 0){
             revert("The data is already stored for this date");
         }
-    hash[_date][_customer] = _hash;
+    hash[_date] = _hash;
     }
     // Retrieve data based on date and sender
-    function GetPlannedData (string memory _date, address _customer) public view returns (string memory){
-        return(hash[_date][_customer]) ;
+    function GetPlannedData (string memory _date) public view returns (string memory){
+        return(hash[_date]) ;
 
     }
 }
