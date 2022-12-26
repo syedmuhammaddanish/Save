@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>web3.storage</title>
+    <style>
+      body {
+        font-size: 16px;
+        font-family: -apple-system, system-ui;
+        padding: 0;
+        margin: 0;
+      }
+      form {
+        width: 500px;
+        padding: 16px;
+        max-width: 100%;
+        display: block;
+        margin: 0 auto;
+        color:#333;
+      }
+      label {
+        display: block;
+        padding: 32px 0 8px;
+        font-weight: 700;
+      }
+      #token {
+        width: 100%;
+        padding: 4px;
+        font-size: 1.2rem;
+      }
+      #output {
+        display: block;
+        padding: 16px;
+        margin: 0;
+        color: lime;
+        background:#222;
+        font-family: Courier New, ui-monospace, monospace;
+        font-weight: 500;
+        line-height: 1.6;
+        position: fixed;
+        bottom: 0;
+        height: 33.3%;
+        width: 100%;
+        overflow-y: scroll;
+      }
+      #output a {
+        color: aqua
+      }
+      input[type=submit] {
+        display: block;
+        padding: 4px 16px;
+        font-weight: 700;
+        font-size: 16px;
+        margin-top: 32px;
+        margin-left: 70%;
+      }
+      h1 {
+        text-align: center;
+        font-size: 24px;
+      }
+      p {
+        text-align: center;
+        font-size: 16px;
+        margin-right: 50%;
+      }
+      h1 span {
+        display: block;
+      }
+
+      .topnav {
+  background-color: #333;
+  overflow: hidden;
+}
+
+/* Style the links inside the navigation bar */
+.topnav a {
+  float: left;
+  color: #f2f2f2;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+  font-size: 17px;
+}
+
+/* Change the color of links on hover */
+.topnav a:hover {
+  background-color: #ddd;
+  color: black;
+}
+
+/* Add a color to the active/current link */
+.topnav a.active {
+  
+  color: white;
+}
+
+.one {
+  margin-left: 10%;
+  width: 60%;
+  height: 200px;
+  float: left;
+}
+
+.two {
+  margin-left: 50%;
+  margin-right: 15%;
+  height: 200px;
+}
+    </style>
+  </head>
+  <script src="./main.js"></script>
+  <script src="https://cdn.ethers.io/lib/ethers-5.7.1.umd.min.js"
+        type="application/javascript"></script>
+  <body>
+    <div class="topnav">
+      <a href="/index.html">Store Data</a>
+      <a href="/fincom.html">Financial Compensation</a>
+      <a href="/generateaddresses.html">Generate Blockchain Addresses</a>
+      <a href="/updateaddresses.html">Update Blockchain Addresses</a>
+      <a href="/verification.html">Verification</a>
+    </div>
+    <header>
+      <h1>⁂
+        <span>Financial Compensation Verification</span>
+      </h1>
+    </header>
+    <div class="one">
+      <input type="date" id="d" name="datefolder" value="2018-12-10" />
+      <button type="submit" onclick="main1()">Verify Off-Chain</button>
+      <p id="myPara1"></p>
+      <p id="p1"></p>
+      <p id="p2"></p>
+      <p id="p3"></p>
+      <p id="p4"></p>
+      <p id="p5"></p>
+      <p id="p6"></p>
+    </div>
+
+    <div class="two">
+      <input type="date" id="d2" name="datefolder" value="2018-12-10" />
+      <button type="submit" onclick="main2()">Verify On-Chain</button>
+      <p id="myPara2"></p>
+      <p id="p11"></p>
+      <p id="p12"></p>
+      <p id="p13"></p>
+      <p id="p14"></p>
+      <p id="p15"></p>
+      <p id="p16"></p>
+    </div>
+  </body>
+  
+</html>
