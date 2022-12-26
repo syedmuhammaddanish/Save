@@ -165,15 +165,15 @@ async function queryExample(fluxQuery, address) {
     }
     //Putting data in respective variables
     var Total_Consumption_Real = arrays[0].map(function(each_element){
-      return Number(each_element).toFixed(3);
+      return Number(each_element).toFixed(0);
     });
   
     var Total_Consumption_Initial = arrays[1].map(function(each_element){
-      return Number(each_element).toFixed(3);
+      return Number(each_element).toFixed(0);
     });
 
     var Total_Consumption_Final = arrays[2].map(function(each_element){
-      return Number(each_element).toFixed(3);
+      return Number(each_element).toFixed(0);
     })
     
     //console.log(Total_Consumption_Real)
@@ -183,8 +183,8 @@ async function queryExample(fluxQuery, address) {
     var dict = {"initial" : Total_Consumption_Initial,
                 "final" : Total_Consumption_Final,
                 "real" : Total_Consumption_Real,
-                "initialprice" : 20,
-                "finalprice" : 30};
+                "initialprice" : 2,
+                "finalprice" : 3};
     var dictstring = JSON.stringify(dict);
     await writeFile(__dirname + `/../Save-main/filefolder/${address}.json`, dictstring, (err) => {});
     
@@ -331,7 +331,7 @@ app.post("/financialcalculation", async (req, res) => {
       console.log(newMessage)
     
 
-    let n = 50;
+    let n = 100;
    
     let b = (Math.ceil(singleHouse.length / n))
     for (let i = 0; i < b; i++) {
@@ -450,7 +450,7 @@ app.post("/financialcalculation", async (req, res) => {
     const signer = new ethers.Wallet(PRIVATE_KEY, provider);
     const contract2 = require("./artifacts/contracts/FinancialCom.sol/FinancialCom.json");
     const FinancialCom = new ethers.Contract(CONTRACT_ADDRESS_2, contract2.abi, signer);
-    const newMessage3 = await FinancialCom.TotalPrice(date, houseAddresses[0]);
+    const newMessage3 = await FinancialCom.CalculatedBalance(date, houseAddresses[0]);
     if (newMessage3 == 0) {
       console.log("Calculating the financial compensation");
       const estimatedGasLimit1 = await FinancialCom.estimateGas.storeBill(balance, houseAddresses, date); // approves 1 USDT
@@ -552,6 +552,9 @@ async function run() {
         result[0].IEEE13[keys[i]]['users_in_the_node'] = addresses
         addresses = []
       }
+
+      let text = privatekeys.join('\n');
+      fs.writeFileSync('privatekeys.txt', text, "utf8");
       
       if (collectionNames.includes('addresses'))
       {
